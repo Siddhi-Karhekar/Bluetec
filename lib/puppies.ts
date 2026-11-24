@@ -44,6 +44,11 @@ export function getPuppy(slug: string) {
   return bySlug.get(slug);
 }
 
+const byId = new Map(all.map((p) => [p.id, p]));
+export function getPuppyById(id: string) {
+  return byId.get(id);
+}
+
 /** A puppy has its own name when it isn't just listed by breed. */
 export const hasName = (p: Puppy) => p.name !== p.breed;
 

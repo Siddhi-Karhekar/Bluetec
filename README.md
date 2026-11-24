@@ -92,6 +92,31 @@ scripts/porting/        one-off helpers used while porting markup (see its READM
 8. **Forms.** Validation is shared (`lib/enquiry.ts`) between client and the `/api/enquiry` route; a hidden honeypot
    field drops bots. The endpoint logs the enquiry — wiring it to email/CRM is a one-line change.
 
+## Security
+
+This is a public brochure site: there are no user accounts, admin area, database, payments or third-party API
+keys, so there is nothing to log in to and no per-user data to leak. What is in place:
+
+- **No secrets in the repo.** Nothing secret is needed; `.env*` files are git-ignored. The only env var,
+  `NEXT_PUBLIC_SITE_URL`, is public by design.
+- **Enquiry API (`/api/enquiry`)** — the only server endpoint:
+  - same-origin only (cross-site POSTs get `403`) and no CORS headers, so other sites can't call it from a browser
+    or read its responses
+  - JSON only (`415` otherwise), 10 KB body cap, per-IP rate limit (5/min → `429`)
+  - shared client/server validation with length limits; unknown puppy ids rejected; honeypot field for bots
+  - never logs names, phone numbers or emails, and never returns stack traces
+- **Security headers** on every response (`next.config.ts`): Content-Security-Policy (self-only sources,
+  `frame-ancestors 'none'`, `object-src 'none'`), HSTS, `X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy`, `Permissions-Policy`; `X-Powered-By` removed.
+- **No unsafe HTML.** User input is only ever rendered as text by React; the single `dangerouslySetInnerHTML` is
+  static JSON-LD with `<` escaped.
+- **Dependencies:** `npm audit` reports 0 vulnerabilities (a vulnerable transitive `postcss` is pinned via
+  `overrides`).
+- **Tests** cover the API hardening and headers (`tests/smoke.spec.ts`).
+
+The in-memory rate limiter is per server instance; for real traffic it would move to a shared store
+(e.g. Redis) or Vercel's firewall rate-limit rules.
+
 ## Getting started
 
 ```bash
@@ -106,7 +131,7 @@ Quality checks:
 npm run lint
 npm run typecheck
 npx playwright install chromium   # first time only
-npm run test:e2e                  # 14 journeys × desktop + mobile
+npm run test:e2e                  # 16 checks × desktop + mobile
 ```
 
 ## Deployment (Vercel)

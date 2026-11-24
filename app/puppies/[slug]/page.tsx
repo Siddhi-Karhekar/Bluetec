@@ -118,7 +118,10 @@ export default async function PuppyPage({ params }: { params: Params }) {
             <span className="tp-ribbon__band" style={{ transform: "scaleY(0)" }} />
           </div>
         </div>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+        />
         <div className="gutter mx-auto max-w-[110rem] pb-20 pt-8 md:pt-12">
           <nav aria-label="Breadcrumb" className="text-[0.95rem] font-semibold text-cocoa-soft">
             <Link className="link-ink" href={available ? "/puppies" : "/gone-home"}>

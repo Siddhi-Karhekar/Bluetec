@@ -60,11 +60,47 @@ test("puppy gallery opens a full-screen viewer", async ({ page }) => {
   await expect(page.getByRole("dialog", { name: /photos/ })).toBeHidden();
 });
 
-test("enquiry API rejects invalid input", async ({ request }) => {
-  const bad = await request.post("/api/enquiry", { data: { name: "A", phone: "x" } });
+test("enquiry API validates input", async ({ request }, info) => {
+  const headers = { "x-forwarded-for": `10.0.0.${info.project.name === "desktop" ? 1 : 2}` };
+  const bad = await request.post("/api/enquiry", { headers, data: { name: "A", phone: "x" } });
   expect(bad.status()).toBe(422);
-  const ok = await request.post("/api/enquiry", { data: { name: "Siddhi", phone: "+971501234567" } });
+  const unknownPup = await request.post("/api/enquiry", {
+    headers,
+    data: { name: "Siddhi", phone: "+971501234567", puppyId: "not-a-puppy" },
+  });
+  expect(unknownPup.status()).toBe(422);
+  const ok = await request.post("/api/enquiry", {
+    headers,
+    data: { name: "Siddhi", phone: "+971501234567" },
+  });
   expect((await ok.json()).ok).toBe(true);
+});
+
+test("enquiry API blocks cross-site, non-JSON and flooding", async ({ request }, info) => {
+  const ip = `10.0.1.${info.project.name === "desktop" ? 1 : 2}`;
+  const data = { name: "Siddhi", phone: "+971501234567" };
+  const cross = await request.post("/api/enquiry", {
+    headers: { origin: "https://evil.example", "x-forwarded-for": ip },
+    data,
+  });
+  expect(cross.status()).toBe(403);
+  expect(cross.headers()["access-control-allow-origin"]).toBeUndefined();
+  const form = await request.post("/api/enquiry", { headers: { "x-forwarded-for": ip }, form: data });
+  expect(form.status()).toBe(415);
+  const statuses: number[] = [];
+  for (let i = 0; i < 7; i++)
+    statuses.push(
+      (await request.post("/api/enquiry", { headers: { "x-forwarded-for": ip }, data })).status(),
+    );
+  expect(statuses).toContain(429);
+});
+
+test("security headers are set", async ({ request }) => {
+  const res = await request.get("/");
+  const h = res.headers();
+  expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(h["x-content-type-options"]).toBe("nosniff");
+  expect(h["x-powered-by"]).toBeUndefined();
 });
 
 test("unknown pages show the lost-puppy page", async ({ page }) => {

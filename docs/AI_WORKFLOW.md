@@ -25,4 +25,4 @@ snapshot of the reference site (HTML, CSS, fonts, images) to my Downloads folder
    menu, reveal-on-scroll, pinned horizontal door treadmill, chat replay, hero line-up, tabs, galleries, FAQ
    search/unfold, puppy filters in the URL, contact letter animation, enquiry API with shared validation.
 6. **Verified** with `tsc`, ESLint, `next build`, side-by-side screenshots against the reference (desktop + mobile)
-   and a Playwright suite (28 passing runs: 14 journeys × desktop/mobile).
+   and a Playwright suite (32 passing runs: 16 checks × desktop/mobile).

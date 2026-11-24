@@ -38,6 +38,8 @@ export function validateEnquiry(e: Enquiry): FieldErrors {
     errors.phone = "Please add a phone or WhatsApp number with country code.";
   if (e.email && !EMAIL.test(e.email)) errors.email = "That email doesn't look quite right.";
   if (e.area && e.area.length > 80) errors.area = "Please keep your area under 80 characters.";
+  if (e.email && e.email.length > 254) errors.email = "That email is too long.";
+  if (e.phone.length > 30) errors.phone = "That phone number is too long.";
   if (e.message && e.message.length > 2000)
     errors.message = "Please keep your message under 2000 characters.";
   return errors;
